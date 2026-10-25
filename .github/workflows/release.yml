@@ -32,9 +32,14 @@ jobs:
 
       - name: Assemble .app
         # CI 无本地稳定证书，脚本自动降级 ad-hoc 签名（用户首开需右键打开）
+        # 双架构产物路径随 SwiftPM 版本变化，动态定位可执行文件
         run: |
+          BIN=$(find .build/apple -type f -name ScreenToGif -perm -111 | grep -v -E '\.(o|d)$' | head -1)
+          echo "二进制产物: ${BIN}"
+          file "${BIN}"
+          test -n "${BIN}"
           Scripts/make-app.sh \
-            --bin .build/apple/Products/Release/ScreenToGif \
+            --bin "${BIN}" \
             --version "${GITHUB_REF_NAME#v}"
 
       - name: Package DMG
