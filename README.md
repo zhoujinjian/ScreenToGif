@@ -64,7 +64,7 @@ Sources/ScreenToGif/
 
 ## 许可证
 
-GIF 编码器（量化 / LZW / 容器）移植自 [ScreenToGif](https://github.com/NickeManarin/ScreenToGif)（MS-PL 协议）。整体仓库许可证见 [LICENSE](LICENSE)（待补充）。
+[MS-PL](LICENSE)（Microsoft Public License），与上游 [ScreenToGif](https://github.com/NickeManarin/ScreenToGif) 保持一致——GIF 编码器移植自其 MS-PL 授权代码，本仓库整体采用同一协议。
 
 ## 致谢
 
