@@ -40,7 +40,8 @@ jobs:
           test -n "${BIN}"
           Scripts/make-app.sh \
             --bin "${BIN}" \
-            --version "${GITHUB_REF_NAME#v}"
+            --version "${GITHUB_REF_NAME#v}" \
+            --adhoc
 
       - name: Package DMG
         run: Scripts/make-dmg.sh --version "${GITHUB_REF_NAME#v}"

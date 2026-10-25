@@ -13,12 +13,14 @@ APP="build/${APP_NAME}.app"
 BIN=".build/release/${APP_NAME}"
 VERSION="0.1.0"
 OPEN_AFTER=0
+ADHOC=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --version) VERSION="$2"; shift 2 ;;
     --bin) BIN="$2"; shift 2 ;;
     --open) OPEN_AFTER=1; shift ;;
+    --adhoc) ADHOC=1; shift ;;
     *) echo "未知参数: $1"; exit 1 ;;
   esac
 done
@@ -65,11 +67,16 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 </plist>
 PLIST
 
-# 3. 稳定自签名证书（避免 ad-hoc 重编译后 TCC 屏幕录制权限失效）
-#    身份存放在 ~/Library/Application Support/ScreenToGif/DevIdentity.p12（p12 持久化，跨机器不重复生成）。
-#    注意：自签名证书不受系统信任，security find-identity -v 不会列出（只列 valid 身份），
-#    但 codesign 可正常使用；故用 find-certificate 检测存在性。
+# 3. 签名
+#    本地：稳定自签名证书（避免 ad-hoc 重编译后 TCC 屏幕录制权限失效）。
+#    --adhoc（CI）：直接 ad-hoc 签名。证书路径在无 GUI 环境不可行——codesign
+#    访问 keychain 私钥的授权对话框无人应答会永久挂起。
 CERT_NAME="ScreenToGif Dev"
+if [[ "$ADHOC" == "1" ]]; then
+  codesign --force --sign - --identifier "$BUNDLE_ID" "$APP"
+  echo "✅ ad-hoc 签名（CI 模式，用户首开需右键打开）"
+  codesign --verify "$APP" && echo "✅ 签名校验通过: $APP"
+else
 P12="$HOME/Library/Application Support/ScreenToGif/DevIdentity.p12"
 if ! security find-certificate -c "$CERT_NAME" 2>/dev/null | grep -q "labl"; then
   mkdir -p "$HOME/Library/Application Support/ScreenToGif"
@@ -99,6 +106,7 @@ else
   echo "⚠️ 回退 ad-hoc 签名（重编译后可能需重新授予屏幕录制权限）"
 fi
 codesign --verify "$APP" && echo "✅ 签名校验通过: $APP"
+fi
 
 # 4. 可选启动
 if [[ "$OPEN_AFTER" == "1" ]]; then
