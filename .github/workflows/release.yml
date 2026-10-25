@@ -1,0 +1,60 @@
+name: Release
+
+# 推送 v* 标签触发：构建 universal(arm64 + x86_64) → 组装 .app → 打 dmg → 发布 Release
+# 发版流程：git tag v0.x.y && git push origin v0.x.y
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build & Release DMG
+    runs-on: macos-14
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build universal binary
+        # runner 有完整 Xcode 工具链，支持双架构；产物在 .build/apple/Products/Release/
+        run: |
+          swift build -c release \
+            --arch arm64 --arch x86_64 \
+            --product ScreenToGif \
+            --scratch-path .build/apple
+
+      - name: Show version
+        run: swift --version
+
+      - name: Assemble .app
+        # CI 无本地稳定证书，脚本自动降级 ad-hoc 签名（用户首开需右键打开）
+        run: |
+          Scripts/make-app.sh \
+            --bin .build/apple/Products/Release/ScreenToGif \
+            --version "${GITHUB_REF_NAME#v}"
+
+      - name: Package DMG
+        run: Scripts/make-dmg.sh --version "${GITHUB_REF_NAME#v}"
+
+      - name: Verify DMG
+        run: |
+          ls -la build/*.dmg
+          hdiutil verify build/*.dmg
+
+      - name: Create Release and Upload DMG
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" build/*.dmg \
+            --title "ScreenToGif ${GITHUB_REF_NAME}" \
+            --generate-notes \
+            --notes "## 安装
+
+          1. 下载下方 dmg（universal：Apple Silicon 与 Intel 均可）
+          2. 打开 dmg，将 ScreenToGif 拖入 Applications
+          3. 首次打开：**右键点击 App → 打开 → 再点“打开”**（未做 Apple 公证，Gatekeeper 需确认一次）
+          4. 首次录制需在 系统设置 → 隐私与安全性 授予「屏幕录制」权限
+
+          要求 macOS 14+。"

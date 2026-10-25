@@ -9,6 +9,14 @@
 - macOS 14 Sonoma 或更高
 - Xcode Command Line Tools（**无需完整 Xcode**，纯 SwiftPM + 脚本组装 .app）
 
+## 下载安装
+
+从 [**Releases**](https://github.com/zhoujinjian/ScreenToGif/releases) 下载最新 dmg（universal，Apple Silicon 与 Intel 均可）：
+
+1. 打开 dmg，将 **ScreenToGif** 拖入 **Applications**
+2. 首次打开：**右键点击 App → 打开 → 再点“打开”**（未做 Apple 公证，Gatekeeper 需确认一次）
+3. 首次录制需在「系统设置 → 隐私与安全性」授予**屏幕录制**权限（记录按键/点击的「辅助功能」权限可选）
+
 ## 功能（Phase 1）
 
 - **屏幕录制**：区域拖选 / 窗口吸附 / 多显示器覆盖层；FPS 1–60（固定/可变帧率）；光标捕获；暂停/继续/快照/停止/丢弃；帧数·时长·实测帧率显示

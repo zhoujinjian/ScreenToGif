@@ -1,6 +1,9 @@
 #!/bin/zsh
 # ScreenToGif macOS — 组装 .app 包 + 稳定自签名 + （可选）启动
-# 用法: Scripts/make-app.sh [--open]
+# 用法: Scripts/make-app.sh [--open] [--version x.y.z] [--bin <可执行文件路径>]
+#   --version  写入 CFBundleShortVersionString（默认 0.1.0）
+#   --bin      可执行文件路径（默认 .build/release/ScreenToGif；
+#              CI 双架构构建产物在 .build/apple/Products/Release/ 下）
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -8,6 +11,20 @@ BUNDLE_ID="com.screentogif.mac"
 APP_NAME="ScreenToGif"
 APP="build/${APP_NAME}.app"
 BIN=".build/release/${APP_NAME}"
+VERSION="0.1.0"
+OPEN_AFTER=0
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --version) VERSION="$2"; shift 2 ;;
+    --bin) BIN="$2"; shift 2 ;;
+    --open) OPEN_AFTER=1; shift ;;
+    *) echo "未知参数: $1"; exit 1 ;;
+  esac
+done
+
+# 构建号：git 提交计数（无 git 环境时回退 1）
+BUILD_NUM=$(git rev-list --count HEAD 2>/dev/null || echo 1)
 
 [[ -f "$BIN" ]] || { echo "❌ 未找到 $BIN，先运行 Scripts/build.sh"; exit 1; }
 
@@ -38,8 +55,8 @@ cat > "$APP/Contents/Info.plist" <<PLIST
     <key>CFBundleDisplayName</key><string>ScreenToGif</string>
     <key>CFBundlePackageType</key><string>APPL</string>
     <key>CFBundleIconFile</key><string>AppIcon</string>
-    <key>CFBundleShortVersionString</key><string>0.1.0</string>
-    <key>CFBundleVersion</key><string>1</string>
+    <key>CFBundleShortVersionString</key><string>${VERSION}</string>
+    <key>CFBundleVersion</key><string>${BUILD_NUM}</string>
     <key>LSMinimumSystemVersion</key><string>14.0</string>
     <key>LSApplicationCategoryType</key><string>public.app-category.utilities</string>
     <key>NSHighResolutionCapable</key><true/>
@@ -84,6 +101,6 @@ fi
 codesign --verify "$APP" && echo "✅ 签名校验通过: $APP"
 
 # 4. 可选启动
-if [[ "${1:-}" == "--open" ]]; then
+if [[ "$OPEN_AFTER" == "1" ]]; then
   open "$APP"
 fi
